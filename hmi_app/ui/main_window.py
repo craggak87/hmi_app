@@ -4,10 +4,17 @@ Main application window for the HMI application.
 import logging
 from typing import Dict, Any, Optional
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                            QLabel, QPushButton, QGroupBox, QGridLayout)
+                            QLabel, QPushButton, QStackedWidget, QFrame)
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 from modbus.client import ModbusClient
+
+# Import page classes
+from ui.main_page import MainPage
+from ui.manual_page import ManualPage
+from ui.auto_page import AutoPage
+from ui.info_page import InfoPage
+from ui.settings_page import SettingsPage
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +31,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         
         self.modbus_client = modbus_client
-        self.tag_values = {}
         
         # Set window properties
         self.setWindowTitle("HMI Application")
@@ -39,10 +45,35 @@ class MainWindow(QMainWindow):
         self.status_label = QLabel("Not Connected")
         self.statusBar().addWidget(self.status_label)
         
-        # Create the UI components
-        self._create_header()
-        self._create_control_panel()
-        self._create_data_display()
+        # Create connection button in the top right
+        self.connection_layout = QHBoxLayout()
+        self.connection_button = QPushButton("Connect")
+        self.connection_button.setFixedWidth(100)
+        self.connection_button.clicked.connect(self.toggle_connection)
+        self.connection_layout.addStretch()
+        self.connection_layout.addWidget(self.connection_button)
+        self.main_layout.addLayout(self.connection_layout)
+        
+        # Create stacked widget for pages
+        self.stacked_widget = QStackedWidget()
+        self.main_layout.addWidget(self.stacked_widget)
+        
+        # Create pages
+        self.main_page = MainPage(modbus_client)
+        self.manual_page = ManualPage(modbus_client)
+        self.auto_page = AutoPage(modbus_client)
+        self.info_page = InfoPage(modbus_client)
+        self.settings_page = SettingsPage(modbus_client)
+        
+        # Add pages to stacked widget
+        self.stacked_widget.addWidget(self.main_page)
+        self.stacked_widget.addWidget(self.manual_page)
+        self.stacked_widget.addWidget(self.auto_page)
+        self.stacked_widget.addWidget(self.info_page)
+        self.stacked_widget.addWidget(self.settings_page)
+        
+        # Create navigation menu at the bottom
+        self._create_navigation_menu()
         
         # Create update timer
         self.update_timer = QTimer(self)
@@ -52,75 +83,85 @@ class MainWindow(QMainWindow):
         # Initial update
         self.update_connection_status()
     
-    def _create_header(self):
-        """Create the header section of the UI."""
-        header_layout = QHBoxLayout()
+    def _create_navigation_menu(self):
+        """Create the bottom navigation menu."""
+        # Create a horizontal separator line
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        self.main_layout.addWidget(separator)
         
-        # Title
-        title_label = QLabel("PLC Control System")
-        title_font = QFont()
-        title_font.setPointSize(18)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
+        # Create navigation buttons layout
+        nav_layout = QHBoxLayout()
         
-        # Connection button
-        self.connection_button = QPushButton("Connect")
-        self.connection_button.setFixedWidth(100)
-        self.connection_button.clicked.connect(self.toggle_connection)
+        # Define button style
+        button_style = """
+        QPushButton {
+            min-height: 50px;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        QPushButton:hover {
+            background-color: #e0e0e0;
+        }
+        QPushButton:checked {
+            background-color: #c0c0c0;
+            border: 2px solid #808080;
+        }
+        """
         
-        header_layout.addWidget(title_label)
-        header_layout.addStretch()
-        header_layout.addWidget(self.connection_button)
+        # Create navigation buttons
+        self.main_button = self._create_nav_button("Main", 0)
+        self.manual_button = self._create_nav_button("Manual", 1)
+        self.auto_button = self._create_nav_button("Auto", 2)
+        self.info_button = self._create_nav_button("Info", 3)
+        self.settings_button = self._create_nav_button("Settings", 4)
         
-        self.main_layout.addLayout(header_layout)
+        # Add buttons to layout
+        nav_layout.addWidget(self.main_button)
+        nav_layout.addWidget(self.manual_button)
+        nav_layout.addWidget(self.auto_button)
+        nav_layout.addWidget(self.info_button)
+        nav_layout.addWidget(self.settings_button)
+        
+        # Apply styles to all buttons
+        for button in [self.main_button, self.manual_button, self.auto_button, 
+                     self.info_button, self.settings_button]:
+            button.setStyleSheet(button_style)
+            button.setCheckable(True)
+        
+        # Set initial active button
+        self.main_button.setChecked(True)
+        
+        # Add navigation layout to main layout
+        self.main_layout.addLayout(nav_layout)
     
-    def _create_control_panel(self):
-        """Create the control panel section of the UI."""
-        control_group = QGroupBox("Control Panel")
-        control_layout = QGridLayout()
-        
-        # Motor control
-        motor_label = QLabel("Motor:")
-        self.motor_status = QLabel("OFF")
-        self.motor_toggle = QPushButton("Start")
-        self.motor_toggle.clicked.connect(self.toggle_motor)
-        
-        # Add widgets to layout
-        control_layout.addWidget(motor_label, 0, 0)
-        control_layout.addWidget(self.motor_status, 0, 1)
-        control_layout.addWidget(self.motor_toggle, 0, 2)
-        
-        # Add more controls as needed
-        control_layout.setColumnStretch(3, 1)  # Add stretch to the last column
-        
-        control_group.setLayout(control_layout)
-        self.main_layout.addWidget(control_group)
+    def _create_nav_button(self, text, page_index):
+        """Create a navigation button."""
+        button = QPushButton(text)
+        button.clicked.connect(lambda: self.change_page(page_index))
+        return button
     
-    def _create_data_display(self):
-        """Create the data display section of the UI."""
-        data_group = QGroupBox("Process Data")
-        data_layout = QGridLayout()
+    def change_page(self, index):
+        """
+        Change the current page.
         
-        # Temperature display
-        temp_label = QLabel("Temperature:")
-        self.temp_value = QLabel("--.- °C")
-        data_layout.addWidget(temp_label, 0, 0)
-        data_layout.addWidget(self.temp_value, 0, 1)
+        Args:
+            index: Index of the page to switch to
+        """
+        # Update stacked widget
+        self.stacked_widget.setCurrentIndex(index)
         
-        # Pressure display
-        pressure_label = QLabel("Pressure:")
-        self.pressure_value = QLabel("--.- bar")
-        data_layout.addWidget(pressure_label, 1, 0)
-        data_layout.addWidget(self.pressure_value, 1, 1)
+        # Update checked state of buttons
+        buttons = [self.main_button, self.manual_button, self.auto_button, 
+                 self.info_button, self.settings_button]
         
-        # Add more data displays as needed
-        data_layout.setColumnStretch(2, 1)  # Add stretch to the last column
-        
-        data_group.setLayout(data_layout)
-        self.main_layout.addWidget(data_group)
-        
-        # Add stretch to push everything to the top
-        self.main_layout.addStretch()
+        for i, button in enumerate(buttons):
+            button.setChecked(i == index)
     
     def update_connection_status(self):
         """Update the connection status display."""
@@ -140,55 +181,15 @@ class MainWindow(QMainWindow):
         
         self.update_connection_status()
     
-    def toggle_motor(self):
-        """Toggle the motor on/off."""
-        if not self.modbus_client.connected:
-            return
-            
-        # Get current motor state (coil 0)
-        current_state = self.modbus_client.read_coils(0, 1)
-        if current_state is None:
-            logger.error("Failed to read motor state")
-            return
-            
-        # Toggle the state
-        new_state = not current_state[0]
-        if self.modbus_client.write_coil(0, new_state):
-            logger.info(f"Motor turned {'ON' if new_state else 'OFF'}")
-            self.update_motor_display(new_state)
-        else:
-            logger.error("Failed to write motor state")
-    
-    def update_motor_display(self, state):
-        """Update the motor status display."""
-        if state:
-            self.motor_status.setText("ON")
-            self.motor_toggle.setText("Stop")
-        else:
-            self.motor_status.setText("OFF")
-            self.motor_toggle.setText("Start")
-    
     def update_values(self):
         """Update all values from the PLC."""
-        if not self.modbus_client.connected:
-            return
+        # Update connection status
+        self.update_connection_status()
         
-        # Update motor state
-        motor_state = self.modbus_client.read_coils(0, 1)
-        if motor_state is not None:
-            self.update_motor_display(motor_state[0])
-        
-        # Update temperature (register 100)
-        temp_reg = self.modbus_client.read_holding_registers(100, 1)
-        if temp_reg is not None:
-            temperature = temp_reg[0] * 0.1  # Apply scaling
-            self.temp_value.setText(f"{temperature:.1f} °C")
-        
-        # Update pressure (register 101)
-        pressure_reg = self.modbus_client.read_holding_registers(101, 1)
-        if pressure_reg is not None:
-            pressure = pressure_reg[0] * 0.01  # Apply scaling
-            self.pressure_value.setText(f"{pressure:.2f} bar")
+        # Update current page values
+        current_page = self.stacked_widget.currentWidget()
+        if hasattr(current_page, 'update_values') and callable(current_page.update_values):
+            current_page.update_values()
     
     def closeEvent(self, event):
         """Handle window close event."""

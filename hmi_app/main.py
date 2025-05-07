@@ -5,6 +5,7 @@ Main application entry point for the HMI application.
 import sys
 import logging
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QTimer
 from ui.main_window import MainWindow
 from modbus.client import ModbusClient
 from config.settings import load_config
@@ -29,11 +30,19 @@ def main():
     # Initialize ModbusTCP client
     modbus_client = ModbusClient(
         host=config.get('modbus', {}).get('host', '127.0.0.1'),
-        port=config.get('modbus', {}).get('port', 502)
+        port=config.get('modbus', {}).get('port', 502),
+        unit_id=config.get('modbus', {}).get('unit_id', 1),
+        auto_reconnect=config.get('modbus', {}).get('auto_reconnect', True),
+        reconnect_delay=config.get('modbus', {}).get('reconnect_delay', 5)
     )
     
     # Initialize Qt application
     app = QApplication(sys.argv)
+    
+    # Apply application style
+    app.setStyle("Fusion")
+    
+    # Initialize main window
     window = MainWindow(modbus_client)
     window.show()
     
