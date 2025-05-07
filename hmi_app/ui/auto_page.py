@@ -5,8 +5,8 @@ import logging
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, 
                            QLabel, QPushButton, QGroupBox, QGridLayout,
                            QLineEdit, QComboBox)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt, QRegExp
+from PyQt5.QtGui import QFont, QRegExpValidator
 from modbus.client import ModbusClient
 
 logger = logging.getLogger(__name__)
