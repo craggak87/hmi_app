@@ -4,7 +4,7 @@ ModbusTCP client implementation using pymodbus.
 import logging
 import time
 from typing import Optional, Dict, Any, List, Tuple, Union
-from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient
 from pymodbus.exceptions import ModbusException, ConnectionException
 
 logger = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ class ModbusClient:
             return None
             
         try:
-            result = self.client.read_coils(address, count, unit=self.unit_id)
+            result = self.client.read_coils(address, count=count, slave=self.unit_id)
             if result.isError():
                 logger.error(f"Error reading coils: {result}")
                 return None
@@ -122,7 +122,7 @@ class ModbusClient:
             return None
             
         try:
-            result = self.client.read_discrete_inputs(address, count, unit=self.unit_id)
+            result = self.client.read_discrete_inputs(address, count=count, slave=self.unit_id)
             if result.isError():
                 logger.error(f"Error reading discrete inputs: {result}")
                 return None
@@ -153,7 +153,7 @@ class ModbusClient:
             return None
             
         try:
-            result = self.client.read_holding_registers(address, count, unit=self.unit_id)
+            result = self.client.read_holding_registers(address, count=count, slave=self.unit_id)
             if result.isError():
                 logger.error(f"Error reading holding registers: {result}")
                 return None
@@ -184,7 +184,7 @@ class ModbusClient:
             return None
             
         try:
-            result = self.client.read_input_registers(address, count, unit=self.unit_id)
+            result = self.client.read_input_registers(address, count=count, slave=self.unit_id)
             if result.isError():
                 logger.error(f"Error reading input registers: {result}")
                 return None
@@ -215,7 +215,7 @@ class ModbusClient:
             return False
             
         try:
-            result = self.client.write_coil(address, value, unit=self.unit_id)
+            result = self.client.write_coil(address, value=value, slave=self.unit_id)
             if result.isError():
                 logger.error(f"Error writing coil: {result}")
                 return False
@@ -246,7 +246,7 @@ class ModbusClient:
             return False
             
         try:
-            result = self.client.write_register(address, value, unit=self.unit_id)
+            result = self.client.write_register(address, value=value, slave=self.unit_id)
             if result.isError():
                 logger.error(f"Error writing register: {result}")
                 return False
@@ -277,7 +277,7 @@ class ModbusClient:
             return False
             
         try:
-            result = self.client.write_registers(address, values, unit=self.unit_id)
+            result = self.client.write_registers(address, values=values, slave=self.unit_id)
             if result.isError():
                 logger.error(f"Error writing registers: {result}")
                 return False
