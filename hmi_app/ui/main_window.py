@@ -33,8 +33,8 @@ class MainWindow(QMainWindow):
         self.modbus_client = modbus_client
         
         # Set window properties
-        self.setWindowTitle("HMI Application")
-        self.setGeometry(100, 100, 1024, 768)
+        self.setWindowTitle("Modbus HMI Application")
+        self.setGeometry(100, 100, 1024, 600)
         
         # Create central widget and main layout
         self.central_widget = QWidget()

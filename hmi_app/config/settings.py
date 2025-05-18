@@ -17,9 +17,9 @@ DEFAULT_CONFIG = {
         "reconnect_delay": 5
     },
     "ui": {
-        "title": "HMI Application",
+        "title": "Modbus HMI Application",
         "width": 1024,
-        "height": 768,
+        "height": 600,
         "refresh_rate": 1000,  # ms
         "theme": "light"
     },

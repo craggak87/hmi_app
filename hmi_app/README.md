@@ -12,12 +12,29 @@ This application provides a graphical interface to monitor and control PLC devic
 - Real-time data display
 - Control interface for sending commands to the PLC
 - Configurable tag system
+- Digital I/O status monitoring
+- Alarm management system with acknowledgment and history
+- System information display
+
+## Interface Tabs
+
+The application includes several interface tabs:
+
+- **Main**: Overview dashboard with key process information
+- **Manual**: Manual control of PLC operations
+- **Auto**: Automatic process control with recipe selection
+- **Info**: System information, I/O status, and alarm management
+  - System Info: Host information, connection status, and event log
+  - I/O Status: Real-time status of digital inputs and outputs
+  - Alarm Log: Active alarms with acknowledge/reset functionality and history view
+- **Settings**: Application and PLC configuration
 
 ## Requirements
 
 - Python 3.6+
 - PyQt5
 - pymodbus
+- psutil (for system information)
 
 ## Installation
 
@@ -53,9 +70,39 @@ Configuration options:
   - `title`: Window title
   - `width`, `height`: Window dimensions
   - `refresh_rate`: Data refresh rate in milliseconds
+  - `theme`: UI theme (light or dark)
 
 - `tags`: Tag definitions for PLC data points
   - Each tag has an address, type, and optional scaling/unit
+
+## Modbus Register Mapping
+
+The application uses the following Modbus register mapping:
+
+- **Coils (0xxxx)**:
+  - 0-7: Digital outputs (Y0-Y7)
+  - 10: Auto mode start
+  - 11: Auto mode stop
+  - 12: Auto mode reset
+
+- **Discrete Inputs (1xxxx)**:
+  - 0-7: Digital inputs (X0-X7)
+
+- **Holding Registers (4xxxx)**:
+  - 100-199: Process values
+  - 300-399: Control parameters
+  - 500-599: Status information
+  - 600-607: Alarm status registers
+
+## Alarm System
+
+The application includes an alarm management system that allows:
+
+- Real-time monitoring of alarm conditions from the PLC
+- Visual indication of active alarms (red) and acknowledged alarms (yellow)
+- Acknowledging alarms via the Acknowledge button
+- Clearing resolved alarms via the Reset button
+- Viewing alarm history (last 100 alarms) via the History button
 
 ## License
 

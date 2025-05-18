@@ -29,7 +29,7 @@ def main():
     
     # Initialize ModbusTCP client
     modbus_client = ModbusClient(
-        host=config.get('modbus', {}).get('host', '127.0.0.1'),
+        host=config.get('modbus', {}).get('host', '192.168.3.250'),
         port=config.get('modbus', {}).get('port', 502),
         unit_id=config.get('modbus', {}).get('unit_id', 1),
         auto_reconnect=config.get('modbus', {}).get('auto_reconnect', True),
